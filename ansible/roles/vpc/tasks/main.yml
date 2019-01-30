@@ -1,0 +1,18 @@
+---
+- name: oregon vpc
+  include: oregon_vpc.yml
+
+- name: ncal vpc
+  include: ncal_vpc.yml
+
+- name: virginia vpc
+  include: virginia_vpc.yml
+
+- name: ohio vpc
+  include: ohio_vpc.yml
+
+- name: canada vpc
+  include: canada_vpc.yml
+
+- name: vpc peering
+  include: vpc_peering.yml

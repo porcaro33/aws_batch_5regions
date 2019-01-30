@@ -1,0 +1,134 @@
+---
+- name: create vpc
+  ec2_vpc_net:
+    state: present
+    cidr_block: 10.100.0.0/16
+    name: 5region-batch-run-us-west-2
+    region: us-west-2
+  register: vpcoregon
+
+- name: create public subnet
+  ec2_vpc_subnet:
+    state: present
+    vpc_id: "{{ vpcoregon.vpc.id }}"
+    cidr: 10.100.0.0/20
+    region: us-west-2
+    az: us-west-2a
+    map_public: yes
+    resource_tags:
+      Name: usw2a-public
+  register: public_subnet_oregon
+
+- name: create private subnet
+  ec2_vpc_subnet:
+    state: present
+    vpc_id: "{{ vpcoregon.vpc.id }}"
+    cidr: 10.100.32.0/19
+    region: us-west-2
+    az: us-west-2a
+    map_public: no
+    resource_tags:
+      Name: usw2a-private
+  register: private_subnet1_oregon
+
+- name: create private subnet
+  ec2_vpc_subnet:
+    state: present
+    vpc_id: "{{ vpcoregon.vpc.id }}"
+    cidr: 10.100.64.0/19
+    region: us-west-2
+    az: us-west-2b
+    map_public: no
+    resource_tags:
+      Name: usw2b-private
+  register: private_subnet2_oregon
+
+- name: create private subnet
+  ec2_vpc_subnet:
+    state: present
+    vpc_id: "{{ vpcoregon.vpc.id }}"
+    cidr: 10.100.96.0/19
+    region: us-west-2
+    az: us-west-2c
+    map_public: no
+    resource_tags:
+      Name: usw2c-private
+  register: private_subnet3_oregon
+
+- name: create Internet GW
+  ec2_vpc_igw:
+    vpc_id: "{{ vpcoregon.vpc.id }}"
+    state: present
+    region: us-west-2
+  register: igw
+
+- name: create nat gateway
+  ec2_vpc_nat_gateway:
+    state: present
+    subnet_id: "{{ public_subnet_oregon.subnet.id }}"
+    wait: yes
+    region: us-west-2
+    if_exist_do_not_create: true
+  register: nat_gateway
+
+- name: create public route table
+  ec2_vpc_route_table:
+    state: present
+    region: us-west-2
+    vpc_id: "{{ vpcoregon.vpc.id }}"
+    tags:
+      Name: Public_RT
+    subnets:
+      - "{{ public_subnet_oregon.subnet.cidr_block }}"
+    routes:
+      - dest: 0.0.0.0/0
+        gateway_id: "{{ igw.gateway_id }}"
+  register: public_rt
+
+- name: create private route table
+  ec2_vpc_route_table:
+    state: present
+    region: us-west-2
+    vpc_id: "{{ vpcoregon.vpc.id }}"
+    tags:
+      Name: Private_RT
+    subnets:
+      - "{{ private_subnet1_oregon.subnet.cidr_block }}"
+      - "{{ private_subnet2_oregon.subnet.cidr_block }}"
+      - "{{ private_subnet3_oregon.subnet.cidr_block }}"
+    routes:
+      - dest: 0.0.0.0/0
+        gateway_id: "{{ nat_gateway.nat_gateway_id }}"
+  register: private_rt
+
+- name: create vpc endpoint
+  ec2_vpc_endpoint:
+    state: present
+    region: us-west-2
+    vpc_id: "{{ vpcoregon.vpc.id }}"
+    service: com.amazonaws.us-west-2.s3
+    route_table_ids:
+      - "{{ public_rt.route_table.id }}"
+      - "{{ private_rt.route_table.id }}"
+  register: vpc_endpoint
+
+- name: create bastion sg group
+  ec2_group:
+    name: bastion-sg
+    description: bastion-sg
+    vpc_id: "{{ vpcoregon.vpc.id }}"
+    region: us-west-2
+    tags:
+      Name: bastion-sg
+      Project: 5region-batch-run
+    rules:
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: 0.0.0.0/0
+      - proto: icmp
+        from_port: 8 # icmp type, -1 = any type
+        to_port:  -1 # icmp subtype, -1 = any subtype
+        cidr_ip: 0.0.0.0/0
+        group_name: bastion-sg
+  register: bastion_sg

@@ -1,0 +1,15 @@
+---
+- name: oregon batch environment
+  include: oregon_batch.yml
+
+- name: ncal batch environment
+  include: ncal_batch.yml
+
+- name: virginia batch environment
+  include: virginia_batch.yml
+
+- name: ohio batch environment
+  include: ohio_batch.yml
+
+- name: canada batch environment
+  include: canada_batch.yml

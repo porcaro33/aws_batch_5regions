@@ -1,0 +1,52 @@
+---
+- name: install basic apps
+  yum:
+    name: "{{ item }}"
+    update_cache: yes
+    state: present
+  with_items:
+    - epel-release
+    - tree
+    - lsof
+    - net-tools
+    - traceroute
+    - git
+    - tmux
+    - dstat
+    - telnet
+    - vim
+    - bzip2
+    - zip
+    - unzip
+    - rsync
+    - zsh
+    - ksh
+    - "@Development Tools"
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat' or ansible_distribution == 'Amazon'
+
+- name: install basic apps
+  apt:
+    name: "{{ item }}"
+    update_cache: yes
+    state: present
+  with_items:
+    - tree
+    - wget
+    - gcc
+    - build-essential
+    - unattended-upgrades
+    - gwhere
+    - traceroute
+    - git
+    - tmux
+    - dstat
+    - telnet
+    - vim
+    - lsof
+    - bzip2
+    - zip
+    - unzip
+    - rsync
+    - htop
+    - zsh
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'

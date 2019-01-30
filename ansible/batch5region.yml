@@ -1,0 +1,18 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: false
+
+  roles:
+    - name: roles/vpc
+    - name: roles/batch
+    - name: roles/ec2
+
+- hosts: tag_Name_5region-batch-run_bastion
+  become: true
+  gather_facts: true
+
+  roles:
+    - name: roles/apps
+    - name: roles/user
+    - name: roles/bastion

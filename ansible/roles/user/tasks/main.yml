@@ -1,0 +1,39 @@
+---
+- name: confirm sudo group
+  group:
+    name: "{{ sudo_group_name }}"
+    state: present
+
+- name: confirm user group
+  group:
+    name: "{{ user_group_name }}"
+    state: present
+
+- name: NOPASS for sudo group
+  lineinfile:
+    dest: /etc/sudoers
+    backup: yes
+    state: present
+    regexp: '^%{{ sudo_group_name }}'
+    line: '%sudo ALL=(ALL) NOPASSWD: ALL'
+
+- name: adding user hiroshi
+  user:
+    name: hiroshi
+    password: <your password>
+    generate_ssh_key: yes
+    ssh_key_type: rsa
+    ssh_key_file: .ssh/id_rsa
+    groups: "{{ sudo_group_name }}"
+    append: yes
+    state: present
+    createhome: yes
+    shell: /bin/bash
+
+- name: enable password authentication
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "^PasswordAuthentication"
+    insertafter: "^#PasswordAuthentication"
+    line: "PasswordAuthentication yes"
+  notify: restart sshd

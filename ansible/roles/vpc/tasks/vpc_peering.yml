@@ -1,0 +1,72 @@
+---
+- name: vpc perring to ncal
+  ec2_vpc_peer:
+    region: us-west-2
+    vpc_id: "{{ vpcoregon.vpc.id }}"
+    peer_vpc_id: "{{ vpcncal.vpc.id }}"
+    peer_region: us-west-1
+    state: present
+    tags:
+      Name: oreogn-ncal
+  register: vpc_peer_ncal
+
+- name: accept ncal vpc peering
+  ec2_vpc_peer:
+    region: us-west-1
+    peering_id: "{{ vpc_peer_ncal.peering_id }}"
+    state: accept
+  when: vpc_peer_ncal.peering_id is defined
+
+- name: vpc perring to virginia
+  ec2_vpc_peer:
+    region: us-west-2
+    vpc_id: "{{ vpcoregon.vpc.id }}"
+    peer_region: us-east-1
+    peer_vpc_id: "{{ vpcvirginia.vpc.id }}"
+    state: present
+    tags:
+      Name: oreogn-virginia
+  register: vpc_peer_virginia
+
+- name: accept virginia vpc peering
+  ec2_vpc_peer:
+    region: us-east-1
+    peering_id: "{{ vpc_peer_virginia.peering_id }}"
+    state: accept
+  when: vpc_peer_virginia.peering_id is defined
+
+- name: vpc perring to ohio
+  ec2_vpc_peer:
+    region: us-west-2
+    vpc_id: "{{ vpcoregon.vpc.id }}"
+    peer_region: us-east-2
+    peer_vpc_id: "{{ vpcohio.vpc.id }}"
+    state: present
+    tags:
+      Name: oreogn-ohio
+  register: vpc_peer_ohio
+
+- name: accept ohio vpc peering
+  ec2_vpc_peer:
+    region: us-east-2
+    peering_id: "{{ vpc_peer_ohio.peering_id }}"
+    state: accept
+  when: vpc_peer_ohio.peering_id is defined
+
+- name: vpc perring to canada
+  ec2_vpc_peer:
+    region: us-west-2
+    vpc_id: "{{ vpcoregon.vpc.id }}"
+    peer_vpc_id: "{{ vpccanada.vpc.id }}"
+    peer_region: ca-central-1
+    state: present
+    tags:
+      Name: oreogn-canada
+  register: vpc_peer_canada
+
+- name: accept canada vpc peering
+  ec2_vpc_peer:
+    region: ca-central-1
+    peering_id: "{{ vpc_peer_canada.peering_id }}"
+    state: accept
+  when: vpc_peer_canada.peering_id is defined

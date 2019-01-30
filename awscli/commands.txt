@@ -1,0 +1,72 @@
+# kobayashi test script
+
+# docker build
+docker build -t openfoam-batch:latest .
+
+# login to ECR
+aws ecr get-login --no-include-email --region us-west-2
+aws ecr get-login --no-include-email --region us-west-1
+aws ecr get-login --no-include-email --region us-east-1
+aws ecr get-login --no-include-email --region us-east-2
+aws ecr get-login --no-include-email --region ca-central-1
+# Run the docker login command that was returned in "ecr get-login" command
+
+# push docker image
+docker tag openfoam-batch:latest 561321675425.dkr.ecr.us-west-2.amazonaws.com/kobayashi-oregon:latest
+docker push 561321675425.dkr.ecr.us-west-2.amazonaws.com/kobayashi-oregon:latest
+
+docker tag openfoam-batch:latest 561321675425.dkr.ecr.us-west-1.amazonaws.com/kobayashi-ncal:latest
+docker push 561321675425.dkr.ecr.us-west-1.amazonaws.com/kobayashi-ncal:latest
+
+docker tag openfoam-batch:latest 561321675425.dkr.ecr.us-east-1.amazonaws.com/kobayashi-virginia:latest
+docker push 561321675425.dkr.ecr.us-east-1.amazonaws.com/kobayashi-virginia:latest
+
+docker tag openfoam-batch:latest 561321675425.dkr.ecr.us-east-2.amazonaws.com/kobayashi-ohio:latest
+docker push 561321675425.dkr.ecr.us-east-2.amazonaws.com/kobayashi-ohio:latest
+
+docker tag openfoam-batch:latest 561321675425.dkr.ecr.ca-central-1.amazonaws.com/kobayashi-canada:latest
+docker push 561321675425.dkr.ecr.ca-central-1.amazonaws.com/kobayashi-canada:latest
+
+# job definition
+aws --region us-west-2 batch register-job-definition --cli-input-json file://job_def_mrm_oregon.json
+aws --region us-west-1 batch register-job-definition --cli-input-json file://job_def_mrm_ncal.json
+aws --region us-east-1 batch register-job-definition --cli-input-json file://job_def_mrm_virginia.json
+aws --region us-east-2 batch register-job-definition --cli-input-json file://job_def_mrm_ohio.json
+aws --region ca-central-1 batch register-job-definition --cli-input-json file://job_def_mrm_canada.json
+
+aws --region us-west-2 batch register-job-definition --cli-input-json file://job_def_octave_oregon.json
+
+aws --region us-west-2 batch register-job-definition --cli-input-json file://job_def_kobayashi_oregon.json
+aws --region us-west-1 batch register-job-definition --cli-input-json file://job_def_kobayashi_ncal.json
+aws --region us-east-1 batch register-job-definition --cli-input-json file://job_def_kobayashi_virginia.json
+aws --region us-east-2 batch register-job-definition --cli-input-json file://job_def_kobayashi_ohio.json
+aws --region ca-central-1 batch register-job-definition --cli-input-json file://job_def_kobayashi_canada.json
+
+# compenv
+aws --region us-west-2 batch create-compute-environment --cli-input-json file://compenv_oregon1.json
+aws --region us-west-1 batch create-compute-environment --cli-input-json file://compenv_ncal1.json
+aws --region us-east-1 batch create-compute-environment --cli-input-json file://compenv_virginia1.json
+aws --region us-east-2 batch create-compute-environment --cli-input-json file://compenv_ohio1.json
+aws --region ca-central-1 batch create-compute-environment --cli-input-json file://compenv_canada1.json
+
+aws --region us-west-2 batch create-compute-environment --compute-environment-name oregon2 --cli-input-json file://compenv_oregon1.json
+aws --region us-west-1 batch create-compute-environment --compute-environment-name ncal2 --cli-input-json file://compenv_ncal1.json
+aws --region us-east-1 batch create-compute-environment --compute-environment-name virginia2 --cli-input-json file://compenv_virginia1.json
+aws --region us-east-2 batch create-compute-environment --compute-environment-name ohio2 --cli-input-json file://compenv_ohio1.json
+aws --region ca-central-1 batch create-compute-environment --compute-environment-name canada2 --cli-input-json file://compenv_canada1.json
+
+aws --region us-west-2 batch create-compute-environment --cli-input-json file://compenv_oregon_octave.json
+
+# creating job queue
+aws --region us-west-2 batch create-job-queue --cli-input-json file://job_queue_oregon.json
+aws --region us-west-1 batch create-job-queue --cli-input-json file://job_queue_ncal.json
+aws --region us-east-1 batch create-job-queue --cli-input-json file://job_queue_virginia.json
+aws --region us-east-2 batch create-job-queue --cli-input-json file://job_queue_ohio.json
+aws --region ca-central-1 batch create-job-queue --cli-input-json file://job_queue_canada.json
+
+aws --region us-west-2 batch create-job-queue --cli-input-json file://job_queue_oregon_octave.json
+
+
+# submit jobs
+./submit_batch.sh
+./submit_batch_global.sh

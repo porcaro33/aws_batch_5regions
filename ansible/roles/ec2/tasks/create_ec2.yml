@@ -1,0 +1,39 @@
+---
+- name: create ec2
+  ec2:
+    image: "{{ centos7_usw2_image }}"
+    key_name: 5region-batch-run
+    instance_type: m5.large
+    assign_public_ip: yes
+    wait: yes
+    wait_timeout: 500
+    region: us-west-2
+    vpc_subnet_id: subnet-06cbdfaa3b488fbbf
+    group_id:
+      - "{{ bastion_sg.group_id }}"
+    volumes:
+      - device_name: /dev/sda1
+        volume_type: gp2
+        volume_size: 100
+        delete_on_termination: true
+    instance_tags:
+      Name: 5region-batch-run_bastion
+      Owner: Hiroshi.Kobayashi
+      Project: 5region-batch-run
+      Application: openfoam
+      OS: centos7
+      Environment: Production
+    count_tag:
+      Name: 5region-batch-run_bastion
+    exact_count: 1
+    monitoring: no
+    instance_profile_name: 5region-batch-run_role
+    termination_protection: no
+    user_data: |
+      #!/bin/bash
+      sudo yum update -y
+  register: ec2
+
+- name: show ec2 info
+  debug:
+    var: ec2

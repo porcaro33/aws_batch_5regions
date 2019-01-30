@@ -1,0 +1,100 @@
+---
+- name: create vpc
+  ec2_vpc_net:
+    state: present
+    cidr_block: 14.100.0.0/16
+    name: 5region-batch-run-ca-central
+    region: ca-central-1
+  register: vpccanada
+
+- name: create public subnet
+  ec2_vpc_subnet:
+    state: present
+    vpc_id: "{{ vpccanada.vpc.id }}"
+    cidr: 14.100.0.0/20
+    region: ca-central-1
+    az: ca-central-1a
+    map_public: yes
+    resource_tags:
+      Name: cac1a-public
+  register: public_subnet_canada
+
+- name: create private subnet
+  ec2_vpc_subnet:
+    state: present
+    vpc_id: "{{ vpccanada.vpc.id }}"
+    cidr: 14.100.32.0/19
+    region: ca-central-1
+    az: ca-central-1a
+    map_public: no
+    resource_tags:
+      Name: cac1a-private
+  register: private_subnet1_canada
+
+- name: create private subnet
+  ec2_vpc_subnet:
+    state: present
+    vpc_id: "{{ vpccanada.vpc.id }}"
+    cidr: 14.100.64.0/19
+    region: ca-central-1
+    az: ca-central-1b
+    map_public: no
+    resource_tags:
+      Name: cac2a-private
+  register: private_subnet2_canada
+
+- name: create Internet GW
+  ec2_vpc_igw:
+    vpc_id: "{{ vpccanada.vpc.id }}"
+    state: present
+    region: ca-central-1
+  register: igw
+
+- name: create nat gateway
+  ec2_vpc_nat_gateway:
+    state: present
+    subnet_id: "{{ public_subnet_canada.subnet.id }}"
+    wait: yes
+    region: ca-central-1
+    if_exist_do_not_create: true
+  register: nat_gateway
+
+- name: create public route table
+  ec2_vpc_route_table:
+    state: present
+    region: ca-central-1
+    vpc_id: "{{ vpccanada.vpc.id }}"
+    tags:
+      Name: Public_RT
+    subnets:
+      - "{{ public_subnet_canada.subnet.cidr_block }}"
+    routes:
+      - dest: 0.0.0.0/0
+        gateway_id: "{{ igw.gateway_id }}"
+  register: public_rt
+
+- name: create private route table
+  ec2_vpc_route_table:
+    state: present
+    region: ca-central-1
+    vpc_id: "{{ vpccanada.vpc.id }}"
+    tags:
+      Name: Private_RT
+    subnets:
+      - "{{ private_subnet1_canada.subnet.cidr_block }}"
+      - "{{ private_subnet2_canada.subnet.cidr_block }}"
+    routes:
+      - dest: 0.0.0.0/0
+        gateway_id: "{{ nat_gateway.nat_gateway_id }}"
+  register: private_rt
+
+- name: create vpc endpoint
+  ec2_vpc_endpoint:
+    state: present
+    region: ca-central-1
+    vpc_id: "{{ vpccanada.vpc.id }}"
+    service: com.amazonaws.ca-central-1.s3
+    route_table_ids:
+      - "{{ public_rt.route_table.id }}"
+      - "{{ private_rt.route_table.id }}"
+  register: vpc_endpoint

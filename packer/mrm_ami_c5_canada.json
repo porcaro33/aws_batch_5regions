@@ -1,0 +1,66 @@
+{
+  "builders": [
+    {
+      "type": "amazon-ebs",
+      "region": "ca-central-1",
+      "vpc_id": "vpc-041c312f451af8d14",
+      "subnet_id": "subnet-0530dbafbd620e7c6",
+      "source_ami": "ami-00d1bdbd447b5933a",
+      "ami_name": "openfoam_batch_ami_c5_{{isotime | clean_ami_name}}",
+      "instance_type": "c5.large",
+      "ssh_username": "ec2-user",
+      "run_tags": {
+              "Name": "openfoam_batch_ami_c5_{{isotime | clean_ami_name}}",
+              "User": "batch.user"
+            },
+      "tags": {
+              "Name": "openfoam_batch_ami_c5_{{isotime | clean_ami_name}}",
+              "User": "batch.user"
+            },
+      "launch_block_device_mappings": [
+                {
+                    "device_name": "/dev/xvdcz",
+                    "volume_type": "gp2",
+                    "delete_on_termination": "true",
+                    "volume_size": 36
+                }
+              ]
+          }
+      ],
+    "provisioners": [
+      {
+        "type": "shell",
+        "inline": [
+          "sudo yum update -y ecs-init",
+          "sudo yum install -y awslogs jq",
+          "sudo chkconfig awslogs on",
+          "sudo mv /etc/awslogs/awscli.conf /etc/awslogs/awscli.conf.org",
+          "sudo mv /etc/awslogs/awslogs.conf /etc/awslogs/awslogs.conf.org",
+          "sudo ls -la /etc/awslogs"
+        ]
+      },
+      {
+        "type": "file",
+        "source": "awscli.conf",
+        "destination": "/home/ec2-user/awscli.conf"
+      },
+      {
+        "type": "shell",
+        "inline": [
+          "sudo cp /home/ec2-user/awscli.conf /etc/awslogs/awscli.conf"
+        ]
+      },
+      {
+        "type": "file",
+        "source": "awslogs.conf",
+        "destination": "/home/ec2-user/awslogs.conf"
+      },
+      {
+        "type": "shell",
+        "inline": [
+          "sudo cp /home/ec2-user/awslogs.conf /etc/awslogs/awslogs.conf",
+          "sudo ls -la /etc/awslogs"
+        ]
+      }
+    ]
+}

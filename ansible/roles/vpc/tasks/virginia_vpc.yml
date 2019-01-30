@@ -1,0 +1,113 @@
+---
+- name: create vpc
+  ec2_vpc_net:
+    state: present
+    cidr_block: 13.100.0.0/16
+    name: 5region-batch-run-us-east-1
+    region: us-east-1
+  register: vpcvirginia
+
+- name: create public subnet
+  ec2_vpc_subnet:
+    state: present
+    vpc_id: "{{ vpcvirginia.vpc.id }}"
+    cidr: 13.100.0.0/20
+    region: us-east-1
+    az: us-east-1a
+    map_public: yes
+    resource_tags:
+      Name: use1a-public
+  register: public_subnet_virginia
+
+- name: create private subnet
+  ec2_vpc_subnet:
+    state: present
+    vpc_id: "{{ vpcvirginia.vpc.id }}"
+    cidr: 13.100.32.0/19
+    region: us-east-1
+    az: us-east-1d
+    map_public: no
+    resource_tags:
+      Name: use1d-private
+  register: private_subnet1_virginia
+
+- name: create private subnet
+  ec2_vpc_subnet:
+    state: present
+    vpc_id: "{{ vpcvirginia.vpc.id }}"
+    cidr: 13.100.64.0/19
+    region: us-east-1
+    az: us-east-1e
+    map_public: no
+    resource_tags:
+      Name: use1e-private
+  register: private_subnet2_virginia
+
+- name: create private subnet
+  ec2_vpc_subnet:
+    state: present
+    vpc_id: "{{ vpcvirginia.vpc.id }}"
+    cidr: 13.100.96.0/19
+    region: us-east-1
+    az: us-east-1f
+    map_public: no
+    resource_tags:
+      Name: use1f-private
+  register: private_subnet3_virginia
+
+- name: create Internet GW
+  ec2_vpc_igw:
+    vpc_id: "{{ vpcvirginia.vpc.id }}"
+    state: present
+    region: us-east-1
+  register: igw
+
+- name: create nat gateway
+  ec2_vpc_nat_gateway:
+    state: present
+    subnet_id: "{{ public_subnet_virginia.subnet.id }}"
+    wait: yes
+    region: us-east-1
+    if_exist_do_not_create: true
+  register: nat_gateway
+
+- name: create public route table
+  ec2_vpc_route_table:
+    state: present
+    region: us-east-1
+    vpc_id: "{{ vpcvirginia.vpc.id }}"
+    tags:
+      Name: Public_RT
+    subnets:
+      - "{{ public_subnet_virginia.subnet.cidr_block }}"
+    routes:
+      - dest: 0.0.0.0/0
+        gateway_id: "{{ igw.gateway_id }}"
+  register: public_rt
+
+- name: create private route table
+  ec2_vpc_route_table:
+    state: present
+    region: us-east-1
+    vpc_id: "{{ vpcvirginia.vpc.id }}"
+    tags:
+      Name: Private_RT
+    subnets:
+      - "{{ private_subnet1_virginia.subnet.cidr_block }}"
+      - "{{ private_subnet2_virginia.subnet.cidr_block }}"
+      - "{{ private_subnet3_virginia.subnet.cidr_block }}"
+    routes:
+      - dest: 0.0.0.0/0
+        gateway_id: "{{ nat_gateway.nat_gateway_id }}"
+  register: private_rt
+
+- name: create vpc endpoint
+  ec2_vpc_endpoint:
+    state: present
+    region: us-east-1
+    vpc_id: "{{ vpcvirginia.vpc.id }}"
+    service: com.amazonaws.us-east-1.s3
+    route_table_ids:
+      - "{{ public_rt.route_table.id }}"
+      - "{{ private_rt.route_table.id }}"
+  register: vpc_endpoint

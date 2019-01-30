@@ -1,0 +1,19 @@
+{
+    "jobDefinitionName": "kobayashi-test",
+    "type": "container",
+    "parameters": {},
+    "containerProperties": {
+        "image": "561321675425.dkr.ecr.us-east-2.amazonaws.com/kobayashi-ohio",
+        "vcpus": 1,
+        "memory": 1500,
+        "command": [],
+        "jobRoleArn": "arn:aws:iam::561321675425:role/openfoam-batch-job-role",
+        "volumes": [],
+        "environment": [],
+        "mountPoints": [],
+        "ulimits": []
+    },
+    "retryStrategy": {
+        "attempts": 3
+    }
+}

@@ -1,0 +1,29 @@
+---
+- name: install tools
+  yum:
+    name: "{{ item }}"
+    update_cache: yes
+    state: present
+  with_items:
+    - epel-release
+    - git
+    - "@Development Tools"
+    - jq
+    - java-1.8.0-openjdk
+    - python-pip
+    - yum-utils
+    - device-mapper-persistent-data
+    - lvm2
+
+- name: enable docker repo
+  shell: yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+- name: install docker
+  yum:
+    name: docker-ce
+    state: present
+
+- name: install AWSCLI
+  pip:
+    name: awscli
+    state: present

@@ -1,0 +1,113 @@
+---
+- name: create vpc
+  ec2_vpc_net:
+    state: present
+    cidr_block: 12.100.0.0/16
+    name: 5region-batch-run-us-east-2
+    region: us-east-2
+  register: vpcohio
+
+- name: create public subnet
+  ec2_vpc_subnet:
+    state: present
+    vpc_id: "{{ vpcohio.vpc.id }}"
+    cidr: 12.100.0.0/20
+    region: us-east-2
+    az: us-east-2a
+    map_public: yes
+    resource_tags:
+      Name: use2a-public
+  register: public_subnet_ohio
+
+- name: create private subnet
+  ec2_vpc_subnet:
+    state: present
+    vpc_id: "{{ vpcohio.vpc.id }}"
+    cidr: 12.100.32.0/19
+    region: us-east-2
+    az: us-east-2a
+    map_public: no
+    resource_tags:
+      Name: use2a-private
+  register: private_subnet1_ohio
+
+- name: create private subnet
+  ec2_vpc_subnet:
+    state: present
+    vpc_id: "{{ vpcohio.vpc.id }}"
+    cidr: 12.100.64.0/19
+    region: us-east-2
+    az: us-east-2b
+    map_public: no
+    resource_tags:
+      Name: usw2b-private
+  register: private_subnet2_ohio
+
+- name: create private subnet
+  ec2_vpc_subnet:
+    state: present
+    vpc_id: "{{ vpcohio.vpc.id }}"
+    cidr: 12.100.96.0/19
+    region: us-east-2
+    az: us-east-2c
+    map_public: no
+    resource_tags:
+      Name: usw2c-private
+  register: private_subnet3_ohio
+
+- name: create Internet GW
+  ec2_vpc_igw:
+    vpc_id: "{{ vpcohio.vpc.id }}"
+    state: present
+    region: us-east-2
+  register: igw
+
+- name: create nat gateway
+  ec2_vpc_nat_gateway:
+    state: present
+    subnet_id: "{{ public_subnet_ohio.subnet.id }}"
+    wait: yes
+    region: us-east-2
+    if_exist_do_not_create: true
+  register: nat_gateway
+
+- name: create public route table
+  ec2_vpc_route_table:
+    state: present
+    region: us-east-2
+    vpc_id: "{{ vpcohio.vpc.id }}"
+    tags:
+      Name: Public_RT
+    subnets:
+      - "{{ public_subnet_ohio.subnet.cidr_block }}"
+    routes:
+      - dest: 0.0.0.0/0
+        gateway_id: "{{ igw.gateway_id }}"
+  register: public_rt
+
+- name: create private route table
+  ec2_vpc_route_table:
+    state: present
+    region: us-east-2
+    vpc_id: "{{ vpcohio.vpc.id }}"
+    tags:
+      Name: Private_RT
+    subnets:
+      - "{{ private_subnet1_ohio.subnet.cidr_block }}"
+      - "{{ private_subnet2_ohio.subnet.cidr_block }}"
+      - "{{ private_subnet3_ohio.subnet.cidr_block }}"
+    routes:
+      - dest: 0.0.0.0/0
+        gateway_id: "{{ nat_gateway.nat_gateway_id }}"
+  register: private_rt
+
+- name: create vpc endpoint
+  ec2_vpc_endpoint:
+    state: present
+    region: us-east-2
+    vpc_id: "{{ vpcohio.vpc.id }}"
+    service: com.amazonaws.us-east-2.s3
+    route_table_ids:
+      - "{{ public_rt.route_table.id }}"
+      - "{{ private_rt.route_table.id }}"
+  register: vpc_endpoint

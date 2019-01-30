@@ -1,0 +1,7 @@
+---
+amazon_linux_usw2_image: ami-a0cfeed8
+amazon_linux2_usw2_image: ami-6cd6f714
+rhel7_usw2_image: ami-28e07e50
+centos7_usw2_image: ami-3ecc8f46
+ubuntu16_usw2_image: ami-0e32ec5bc225539f5
+ubuntu18_usw2_image: ami-0bbe6b35405ecebdb

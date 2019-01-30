@@ -1,0 +1,47 @@
+---
+- name: create batch sg group
+  ec2_group:
+    name: aws-batch-sg
+    description: aws-batch-sg
+    vpc_id: "{{ vpccanada.vpc.id }}"
+    region: ca-central-1
+    tags:
+      Name: aws-batch-sg
+      Project: 5region-batch-run
+    rules:
+      - proto: tcp
+        from_port: 80
+        to_port: 80
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: 443
+        to_port: 443
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: "{{ vpcoregon.vpc.cidr_block }}"
+      - proto: all
+        group_name: aws-batch-sg
+  register: batch_sg_canada
+
+- name: crate s3 bucket
+  s3_bucket:
+    name: 5region-batch-run-openfoam-ohio
+    region: ca-central-1
+
+- name: create key pair
+  ec2_key:
+    region: ca-central-1
+    name: 5region-batch-run
+    key_material: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCjMqE2raAiLnZZxp99kXtgYRLEyd7UOkxSEPo2Fm0raK4CrwrijleWa6NVfroaJTji0/dhnsOdEnc1mheazuxwhAVRbZDlDrd9PP7Bs60z8JfK3DKz/AlFL/Rjq/ySLEJr8q9O97Crs+amdV4nPjGm5oMKpvBfiwTDgJeLR97xxDi3Qeq7krbCWEqDlSqaFsfxu851XoY+Tg4ErxDbHN3vRE9C6Tf2Jj7sPEBBwd4+ZvEgNrW9hDx25H0rRZ4HCeUkcXP+1yOQE1F1ioEIaSa1y0lLrWWpmB3oEXvaoQEPpHW60lb2mR0ZPLGLKMQvvG1pdQk1DLSso/ogxWgYW4uz'
+
+- name: create ecr
+  ecs_ecr:
+    region: ca-central-1
+    name: openfoam
+
+- name: create ecr
+  ecs_ecr:
+    region: ca-central-1
+    name: kobayashi-canada

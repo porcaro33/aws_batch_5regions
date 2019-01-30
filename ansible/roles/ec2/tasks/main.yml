@@ -1,0 +1,3 @@
+---
+- name: create ec2
+  include: create_ec2.yml
